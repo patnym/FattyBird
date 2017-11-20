@@ -5,10 +5,12 @@ var G_FATTY_CANVAS;
 function setup(containerId, width, height) {
     var containerElement = document.getElementById(containerId);
 
-    console.log(containerElement);
+    current_log_level = VERBOSE_LEVEL;
+
+    fatty_log(VERBOSE_LEVEL, containerElement);
 
     if(!containerElement) {
-        console.error('Couldnt locate container element by id: ' + containerId);
+        fatty_log(ERROR_LEVEL, 'Couldnt locate container element by id: ' + containerId);
         return;
     }
 
@@ -28,7 +30,7 @@ function setup(containerId, width, height) {
 
     }
 
-    console.log('Successfully created a ' + G_FATTY_CANVAS.width + 'x' + G_FATTY_CANVAS.height + 'px canvas');
+    fatty_log(INFO_LEVEL, 'Successfully created a ' + G_FATTY_CANVAS.width + 'x' + G_FATTY_CANVAS.height + 'px canvas');
 }
 
 /**
@@ -70,3 +72,33 @@ Player.prototype.draw = function() {
 /**
  * End classes
  */
+
+/**
+ * Debug functions
+ */
+//Handles 0 = Verbose, 1 = Info, 2 = Debug, 3 = Error
+var ERROR_LEVEL = 3;
+var DEBUG_LEVEL = 2;
+var INFO_LEVEL = 1;
+var VERBOSE_LEVEL = 0;
+var current_log_level = 2;
+function fatty_log(level, msg, ...optionalParams) {
+
+    if(current_log_level >= level) 
+        return;
+
+    switch(level) {
+        case 0: 
+            console.log(msg, optionalParams);
+            break;
+        case 1:
+            console.info(msg, optionalParams);        
+            break;
+        case 2:
+            console.debug(msg, optionalParams);    
+            break;
+        case 3: 
+            console.error(msg, optionalParams);        
+            break;
+    }
+}
