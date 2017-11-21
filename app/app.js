@@ -12,7 +12,7 @@ var upwards_force = -200;
 var background_velocity = 100; //?
 
 var interval;
-var intervalSpeed = 1000 / 30; //Update 60 times a second
+var intervalSpeed = 1000 / 30; //Update 30 times a second
 
 var gameRunning = false;
 var fatty_timer;
@@ -45,9 +45,8 @@ function setup(containerId, width, height) {
     containerElement.appendChild(fatty_canvas);
 
     fatty_canvas.onmouseup = function(e) { 
-        console.log("Hej");
         if(current_player && gameRunning) {
-            current_player.fly();
+            mousedown = true;
         }
     }
 
@@ -91,6 +90,9 @@ function gameLoop() {
 
     var deltaMS = Date.now() - fatty_timer;
     fatty_timer = Date.now();
+
+    //Handle any mouse events
+    handleMouseDown();
 
     //We always render the background, do it regardless of state
     current_background.update(deltaMS);
@@ -335,13 +337,25 @@ RunningState.prototype.onEnd = function() {
 
 //End states
 
+//Test
+var mousedown = false;
+
+function handleMouseDown() {
+    if(mousedown) {
+        if(current_player && gameRunning) {
+            current_player.fly();
+        }
+    }
+    mousedown = false;
+}
+
 //Key listeners
 window.onkeyup = function(e) {
     var code = e.keyCode ? e.keyCode : e.which;
 
     if(code === 32) {
         if(current_player && gameRunning) {
-            current_player.fly();
+            mousedown = true;
         }
     } else if(code === 80) {
         if(!(current_state instanceof RunningState)) {
