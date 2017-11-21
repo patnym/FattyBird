@@ -305,7 +305,6 @@ PreState.prototype.onStart = function() {
 PreState.prototype.onUpdate = function(deltaMS) {
     //update
     current_background.update(deltaMS);
-    current_player.update(0); //We send 0 as we dont want the physiscs so start working
 
     //draw
     current_background.draw(deltaMS);    
