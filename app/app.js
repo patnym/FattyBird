@@ -15,6 +15,7 @@ var interval;
 var intervalSpeed = 1000 / 30; //Update 30 times a second
 
 var gameRunning = false;
+var rendering = false;
 var fatty_timer;
 
 //Needs get called once - If widht and heights are specified use it, otherwise use the containerid dimensions
@@ -63,22 +64,14 @@ function setup(containerId, width, height) {
 
     //Set the current state
     switchState(new PreState());
-
-    //Create background
-    current_background = new Background();
-
-    //Start game loop
-    fatty_timer = Date.now();
-    gameLoop();
-    fatty_context.fillStyle = "#4ec0ca";
 }
 
 function switchState(state) {
     if(current_state) {
         current_state.onEnd();
     }
-    state.onStart();
     current_state = state;
+    state.onStart();    
 }
 
 /**
@@ -95,7 +88,26 @@ function gameLoop() {
     handleMouseDown();
 
     current_state.onUpdate(deltaMS);
-    requestAnimFrame( gameLoop );    
+
+    if(rendering) {
+        requestAnimFrame( gameLoop );    
+    } else {
+        //Call one last update with 0 time since we wanna stop drawing. This prevents the overlay fillrect from "deleting" everything
+        current_state.onUpdate(0);
+        fatty_log(INFO_LEVEL, "Game loop stopped.");
+    }
+}
+
+function startGameLoop() {
+    fatty_log(INFO_LEVEL, "Starting gameloop..");
+    rendering = true;
+    gameLoop();
+}
+
+//Sets rendering to false which will stop the gameloop
+function stopGameLoop() {
+    fatty_log(INFO_LEVEL, "Stopping gameloop..");
+    rendering = false;
 }
 
 /**
@@ -123,11 +135,12 @@ window.requestAnimFrame = (function(){
  */
 
 //Player class
-function Player() {
+function Player(backgroundObject) {
     this.loadAssets();
     //This means it will take 0.1 second to complete an entire animation cycle
     this.ANIMATION_CYCLE_SPEED = 100 / 4; 
     this.anim_timer = this.ANIMATION_CYCLE_SPEED;
+    this.backgroundObject = backgroundObject;
 }
 
 //Load all graphical assets
@@ -167,6 +180,17 @@ Player.prototype.update = function(deltaMS) {
     this.y += this.velocity * (deltaMS / 1000);
 
     this.rotation = Math.min((this.velocity / 1000) * 90, 90);
+
+    //Correct my height to collide with the ceiling
+    if(this.y <= this.backgroundObject.ceiling_height + (this.height / 2)) {
+        this.y = this.backgroundObject.ceiling_height + (this.height / 2);
+    }
+}
+
+//Returns a bounding box of the player
+//TODO: This bounding box doesnt accout for rotations, fix
+Player.prototype.getBoundingBox = function() {
+    return { topLeft: { x: this.x - this.width/2, y: this.y - this.height/2 }, width: this.width, height: this.height };
 }
 
 //Draw function
@@ -266,6 +290,10 @@ Background.prototype.update = function(deltaMS) {
     }
 }
 
+Background.prototype.getFloorLevel = this.floorLevel;
+
+Background.prototype.getCeilingLevel = this.ceiling_height;
+
 Background.prototype.draw = function(deltaMS) {
     if(this.renderReady) {
         var i = 0;
@@ -293,13 +321,28 @@ function PreState() {
 }
 
 PreState.prototype.onStart = function() {
+    //Create background
+    if(!current_background) {
+        fatty_log(VERBOSE_LEVEL, "No background created, creating..");
+        current_background = new Background();
+    } else {
+        fatty_log(VERBOSE_LEVEL, "Background already exists, reseting..");        
+        //Reset shit
+    }
+
     if(!current_player) {
         fatty_log(VERBOSE_LEVEL, "No player created yet, creating..");
-        current_player = new Player();
+        current_player = new Player(current_background);
     } else {
         fatty_log(VERBOSE_LEVEL, "Player already exists, reseting..");
         //Just reset to avoid loading assets twice
+        //TODO: Fix reset function
     }
+    
+    fatty_timer = Date.now();
+    fatty_context.fillStyle = "#4ec0ca";
+
+    startGameLoop();
 }
 
 PreState.prototype.onUpdate = function(deltaMS) {
@@ -326,9 +369,9 @@ RunningState.prototype.onStart = function() {
 
 RunningState.prototype.onUpdate = function(deltaMS) {
     //This might be a bit taboo, but there is no way better to check for collision since any collision will finish the game
-    if(this.isPlayerCollided()) {
+    if(this.isPlayerCollided(current_player, current_background)) {
         //Exit game
-
+        switchState(new GameOverState());
     } else {
         //update
         current_background.update(deltaMS);
@@ -341,12 +384,43 @@ RunningState.prototype.onUpdate = function(deltaMS) {
 }
 
 RunningState.prototype.isPlayerCollided = function(playerObject, backgroundObjects, pipeObjectsList) {
+    //Check if we have collided with the world
+    //Check floor
+    var pbb = playerObject.getBoundingBox();
+    if( (pbb.topLeft.y + pbb.height) > backgroundObjects.floorLevel ) {
+        return true;
+    }
+    //Check the pipes seperate as they can be optimized
 
+    return false;
 }
 
 RunningState.prototype.onEnd = function() {
     gameRunning = false;
 }
+
+//GameOverState start
+
+function GameOverState() {
+
+}
+
+GameOverState.prototype.onStart = function() {
+    stopGameLoop();    
+}
+
+//This is a bit of clever haxxor. This will get called once, enuff to draw the entire screen once more  and lock it
+GameOverState.prototype.onUpdate = function(deltaMS) {    
+    //draw
+    current_background.draw(deltaMS);    
+    current_player.draw(deltaMS);
+}
+
+GameOverState.prototype.onEnd = function() {
+
+}
+
+//GameOverState end
 
 //End states
 
@@ -392,7 +466,7 @@ var VERBOSE_LEVEL = 0;
 var current_log_level = 2;
 function fatty_log(level, msg, ...optionalParams) {
 
-    if(current_log_level >= level) 
+    if(level < current_log_level) 
         return;
 
     switch(level) {
