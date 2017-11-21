@@ -94,10 +94,6 @@ function gameLoop() {
     //Handle any mouse events
     handleMouseDown();
 
-    //We always render the background, do it regardless of state
-    current_background.update(deltaMS);
-    current_background.draw(deltaMS);
-
     current_state.onUpdate(deltaMS);
     requestAnimFrame( gameLoop );    
 }
@@ -307,8 +303,12 @@ PreState.prototype.onStart = function() {
 }
 
 PreState.prototype.onUpdate = function(deltaMS) {
-    //update player
+    //update
+    current_background.update(deltaMS);
     current_player.update(0); //We send 0 as we dont want the physiscs so start working
+
+    //draw
+    current_background.draw(deltaMS);    
     current_player.draw(deltaMS);
 }
 
@@ -326,9 +326,23 @@ RunningState.prototype.onStart = function() {
 }
 
 RunningState.prototype.onUpdate = function(deltaMS) {
-    //update player
-    current_player.update(deltaMS);
-    current_player.draw(deltaMS);
+    //This might be a bit taboo, but there is no way better to check for collision since any collision will finish the game
+    if(this.isPlayerCollided()) {
+        //Exit game
+
+    } else {
+        //update
+        current_background.update(deltaMS);
+        current_player.update(deltaMS);        
+
+        //draw
+        current_background.draw(deltaMS);    
+        current_player.draw(deltaMS);
+    }
+}
+
+RunningState.prototype.isPlayerCollided = function(playerObject, backgroundObjects, pipeObjectsList) {
+
 }
 
 RunningState.prototype.onEnd = function() {
