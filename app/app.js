@@ -44,6 +44,13 @@ function setup(containerId, width, height) {
     //Attach our canvas
     containerElement.appendChild(fatty_canvas);
 
+    fatty_canvas.onmouseup = function(e) { 
+        console.log("Hej");
+        if(current_player && gameRunning) {
+            current_player.fly();
+        }
+    }
+
     }
 
     fatty_context = fatty_canvas.getContext('2d');
