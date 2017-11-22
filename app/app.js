@@ -4,6 +4,7 @@ var fatty_context;
 var current_state; 
 var current_player;
 var current_background;
+var current_pipes = [];
 
 //This was calibrated on a 600x400 canvas - I'd recommend you calibrating on a 600x400 canvas aswell if you are not happy with the feeling
 var gravity = 700;
@@ -147,7 +148,7 @@ function Player(backgroundObject) {
 Player.prototype.loadAssets = function() {
     this.velocity = 0;
     this.sprite = new Image();
-    this.SPRITE_STRIDE = 24;
+    this.SPRITE_STRIDE = 24; //The height of each model in the sprite
     this.totalStride = 0;
     var player = this;
     this.sprite.onload = function() {
@@ -155,7 +156,7 @@ Player.prototype.loadAssets = function() {
         fatty_log(INFO_LEVEL, "Loaded player asset");
 
         //Calculate the size of the player
-        var ratio = 34 / 24;
+        var ratio = player.sprite.width / player.SPRITE_STRIDE;
 
         player.height = fatty_canvas.height * 0.05;
         player.width = player.height * ratio;
@@ -290,10 +291,6 @@ Background.prototype.update = function(deltaMS) {
     }
 }
 
-Background.prototype.getFloorLevel = this.floorLevel;
-
-Background.prototype.getCeilingLevel = this.ceiling_height;
-
 Background.prototype.draw = function(deltaMS) {
     if(this.renderReady) {
         var i = 0;
@@ -313,6 +310,84 @@ Background.prototype.draw = function(deltaMS) {
 }
 
 //End Background class
+
+//Start Pipe class
+
+function Pipe(backgroundObject, playerObject) {
+    this.renderReady = false;
+    this.backgroundObject = backgroundObject;
+    this.playerObject = playerObject;
+    this.loadAssets();
+}
+
+Pipe.prototype.loadAssets = function() {
+    this.upwardsSprite = new Image();
+    this.downwardsSprite = new Image();
+    this.pipePatternSprite = new Image();
+    this.spriteCount = 3;
+
+    this.x = fatty_canvas.width;
+    //TEST 
+    //TODO: Move this to a manager that just creates lightweight copies of this Pipe. We should never load the assets more then once
+    this.boxTop = 140;
+    this.boxBottom = 230;
+
+    var pipe = this;
+    var onloaded = function () {
+        pipe.spriteCount--;
+
+        if(pipe.spriteCount === 0) {
+
+            var ratio = pipe.downwardsSprite.height / pipe.downwardsSprite.width;
+            //Pipe heights are the same regardless of orientation
+            pipe.pipeWidth = pipe.playerObject.width * 1.5; //150% wider then the player
+            pipe.pipeHeight = pipe.pipeWidth * ratio;
+
+            //Calculate the pattern heights and strides
+            pipe.patternHeight = pipe.pipePatternSprite.height;
+
+            pipe.upwardsStride = ((pipe.boxTop - pipe.pipeHeight) - pipe.backgroundObject.ceiling_height) / pipe.patternHeight;
+            pipe.downwardsStride =  (pipe.backgroundObject.floorLevel - (pipe.boxBottom + pipe.pipeHeight)) / pipe.patternHeight;
+
+            pipe.renderReady = true;            
+            fatty_log(VERBOSE_LEVEL, "Successfully loaded pipe assets..");
+        }
+    }
+
+    this.upwardsSprite.src = './assets/pipe-up.png';
+    this.downwardsSprite.src = './assets/pipe-down.png';
+    this.pipePatternSprite.src = './assets/pipe.png';
+
+    this.upwardsSprite.onload = onloaded;
+    this.downwardsSprite.onload = onloaded;
+    this.pipePatternSprite.onload = onloaded;
+}
+
+Pipe.prototype.update = function(deltaMS) {
+    this.x -= background_velocity * (deltaMS / 1000);
+}
+
+Pipe.prototype.draw = function(deltaMS) {
+    if(this.renderReady) {
+
+        //Draw top pipe
+        //Draw top part then repeat until we reach ceiling level
+        fatty_context.drawImage(this.downwardsSprite, this.x, (this.boxTop - this.pipeHeight), this.pipeWidth, this.pipeHeight);
+        //Draw the pattern upwards
+        var i;
+        for(i = 1; i < this.upwardsStride; i++) {
+            fatty_context.drawImage(this.pipePatternSprite, this.x, (this.boxTop - this.pipeHeight) - i, this.pipeWidth, 1);
+        }
+
+        //Draw bottom pipe
+        fatty_context.drawImage(this.upwardsSprite, this.x, this.boxBottom, this.pipeWidth, this.pipeHeight);
+        for(i = 1; i < this.downwardsStride; i++) {
+            fatty_context.drawImage(this.pipePatternSprite, this.x, (this.boxBottom + this.pipeHeight) + i, this.pipeWidth, 1);
+        }
+    }
+}
+
+//End pipe class
 
 //Begin states
 
@@ -365,6 +440,9 @@ function RunningState() {
 
 RunningState.prototype.onStart = function() {
     gameRunning = true;
+
+    //TEST
+    current_pipes.push(new Pipe(current_background, current_player));
 }
 
 RunningState.prototype.onUpdate = function(deltaMS) {
@@ -376,9 +454,15 @@ RunningState.prototype.onUpdate = function(deltaMS) {
         //update
         current_background.update(deltaMS);
         current_player.update(deltaMS);        
+        current_pipes.forEach(pipe => {
+            pipe.update(deltaMS);
+        });
 
         //draw
         current_background.draw(deltaMS);    
+        current_pipes.forEach(pipe => {
+            pipe.draw(deltaMS);
+        });
         current_player.draw(deltaMS);
     }
 }
