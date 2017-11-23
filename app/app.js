@@ -16,8 +16,7 @@ var background_velocity = 100; //?
 var flyThroughHeight; //Calculated during setup
 var flyThroughPadding; //Calculated during setup
 
-var interval;
-var intervalSpeed = 1000 / 30; //Update 30 times a second
+var score = 0;
 
 var gameRunning = false;
 var rendering = false;
@@ -67,7 +66,7 @@ function setup(containerId, width, height) {
     upwards_force *= fatty_canvas.height / 400;
     background_velocity *= fatty_canvas.height / 400;
 
-    flyThroughHeight = fatty_canvas.height * 0.2;
+    flyThroughHeight = fatty_canvas.height * 0.18;
     flyThroughPadding = fatty_canvas.height * 0.1;
 
 
@@ -81,6 +80,12 @@ function switchState(state) {
     }
     current_state = state;
     state.onStart();    
+}
+
+function addToHighscore() {
+    score++;
+
+    fatty_log(INFO_LEVEL, "Score is: " + score);
 }
 
 /**
@@ -194,6 +199,10 @@ Player.prototype.update = function(deltaMS) {
     //Correct my height to collide with the ceiling
     if(this.y <= this.backgroundObject.ceiling_height + (this.height / 2)) {
         this.y = this.backgroundObject.ceiling_height + (this.height / 2);
+    }
+
+    if(this.y >= this.backgroundObject.floorLevel - (this.height / 2)) {
+        this.y = this.backgroundObject.floorLevel - (this.height / 2);
     }
 }
 
@@ -328,7 +337,7 @@ function PipeManager(playerObject, backgroundObject) {
     this.assets = {};
     this.loadAssets();
     this.count = 1;
-    this.pipeSpacing = fatty_canvas.width * 0.25; //33% of the screen width between each pipe
+    this.pipeSpacing = background_velocity * 1.5;
     this.currentSpacing = this.pipeSpacing;
 }
 
@@ -385,7 +394,12 @@ PipeManager.prototype.update = function(deltaMS) {
         this.currentSpacing = this.pipeSpacing;
     }
 
-    //Check pipe collisions here maybe?
+    //Check pipe collisions here maybe
+    current_pipes.forEach(pipe => {
+        if(pipe.isPlayerColliding(this.playerObject)) {
+            switchState(new GameOverState());
+        }
+    });
 }
 
 PipeManager.prototype.createNewPipe = function() {
@@ -430,7 +444,7 @@ Pipe.prototype.loadAssets = function() {
     var pipeLength = this.boxTop - this.pipeHeight;
     this.downwardsPattern.height = pipeLength;
     this.downwardsPattern.width = this.pipeWidth;
-    for(var i = 1; i < this.downwardsStride; i++) {
+    for(var i = 0; i < this.downwardsStride; i++) {
         tCtx.drawImage(this.pipePatternSprite, 0, i, this.pipeWidth, 1);
     }
 
@@ -440,7 +454,7 @@ Pipe.prototype.loadAssets = function() {
     pipeLength = this.backgroundObject.floorLevel - (this.boxBottom + this.pipeHeight);
     this.upwardsPattern.height = pipeLength;
     this.upwardsPattern.width = this.pipeWidth;
-    for(var i = 1; i < this.upwardsStride + 100; i++) {
+    for(var i = 0; i < this.upwardsStride; i++) {
         tCtx.drawImage(this.pipePatternSprite, 0, i, this.pipeWidth, 1);
     }
 }
@@ -458,9 +472,24 @@ Pipe.prototype.draw = function(deltaMS) {
     //Draw bottom pipe
     fatty_context.drawImage(this.upwardsSprite, this.x, this.boxBottom, this.pipeWidth, this.pipeHeight);
     fatty_context.drawImage(this.upwardsPattern, this.x , this.boxBottom + this.pipeHeight);
-    // for(i = 1; i < this.downwardsStride; i++) {
-    //     fatty_context.drawImage(this.pipePatternSprite, this.x, (this.boxBottom + this.pipeHeight) + i, this.pipeWidth, 1);
-    // }
+}
+
+Pipe.prototype.isPlayerColliding = function(playerObject) {
+    //Check if player has entered
+    if((playerObject.x + (playerObject.width / 2)) < this.x) {
+        return false;
+    } else if((playerObject.x - (playerObject.width / 2)) > (this.x + this.pipeWidth) && this.playerEntered) {
+        this.playerEntered = false;
+        addToHighscore();
+        return false;
+    } else if(((playerObject.x + (playerObject.width / 2)) > this.x && (playerObject.x + (playerObject.width / 2)) < this.x + this.pipeWidth) ||
+                ((playerObject.x  - (playerObject.width / 2)) > this.x && (playerObject.x - (playerObject.width / 2)) < this.x + this.pipeWidth))  {
+        this.playerEntered = true;      
+        //Check vertical collision
+        if((playerObject.y - (playerObject.height / 2) < this.boxTop) || (playerObject.y + (playerObject.height / 2) > this.boxBottom)) {
+            return true;
+        }
+    }
 }
 
 //End pipe class
@@ -486,8 +515,6 @@ PreState.prototype.onStart = function() {
         current_player = new Player(current_background);
     } else {
         fatty_log(VERBOSE_LEVEL, "Player already exists, reseting..");
-        //Just reset to avoid loading assets twice
-        //TODO: Fix reset function
     }
 
     if(!current_pipe_manager) {
@@ -552,11 +579,9 @@ RunningState.prototype.isPlayerCollided = function(playerObject, backgroundObjec
     //Check if we have collided with the world
     //Check floor
     var pbb = playerObject.getBoundingBox();
-    if( (pbb.topLeft.y + pbb.height) > backgroundObjects.floorLevel ) {
+    if( (pbb.topLeft.y + pbb.height) >= backgroundObjects.floorLevel ) {
         return true;
     }
-    //Check the pipes seperate as they can be optimized
-
     return false;
 }
 
@@ -571,17 +596,18 @@ function GameOverState() {
 }
 
 GameOverState.prototype.onStart = function() {
-    stopGameLoop();    
+    //stopGameLoop();    
 }
 
 //This is a bit of clever haxxor. This will get called once, enuff to draw the entire screen once more  and lock it
-GameOverState.prototype.onUpdate = function(deltaMS) {    
+GameOverState.prototype.onUpdate = function(deltaMS) {   
+    current_player.update(deltaMS); 
     //draw
-    current_background.draw(deltaMS);
+    current_background.draw(0);
     current_pipes.forEach(pipe => {
-        pipe.draw(deltaMS);
+        pipe.draw(0);
     });    
-    current_player.draw(deltaMS);
+    current_player.draw(0);
 }
 
 GameOverState.prototype.onEnd = function() {
