@@ -13,6 +13,9 @@ var upwards_force = -200;
 
 var background_velocity = 100; //?
 
+var flyThroughHeight; //Calculated during setup
+var flyThroughPadding; //Calculated during setup
+
 var interval;
 var intervalSpeed = 1000 / 30; //Update 30 times a second
 
@@ -63,6 +66,10 @@ function setup(containerId, width, height) {
     gravity *= fatty_canvas.height / 400;
     upwards_force *= fatty_canvas.height / 400;
     background_velocity *= fatty_canvas.height / 400;
+
+    flyThroughHeight = fatty_canvas.height * 0.2;
+    flyThroughPadding = fatty_canvas.height * 0.1;
+
 
     //Set the current state
     switchState(new PreState());
@@ -321,7 +328,7 @@ function PipeManager(playerObject, backgroundObject) {
     this.assets = {};
     this.loadAssets();
     this.count = 1;
-    this.pipeSpacing = fatty_canvas.width * 0.33; //33% of the screen width between each pipe
+    this.pipeSpacing = fatty_canvas.width * 0.25; //33% of the screen width between each pipe
     this.currentSpacing = this.pipeSpacing;
 }
 
@@ -366,6 +373,7 @@ PipeManager.prototype.update = function(deltaMS) {
     //Delete pipes
     for(var i = current_pipes.length - 1; i >= 0; i--) {
         if(current_pipes[i].x < -this.assets.pipeWidth) {
+            console.log("Removed pipe");
             current_pipes.splice(i, 1);
         }
     }
@@ -381,14 +389,15 @@ PipeManager.prototype.update = function(deltaMS) {
 }
 
 PipeManager.prototype.createNewPipe = function() {
-    current_pipes.push(new Pipe(this.backgroundObject, this.playerObject, this.assets))
+    var rPos = getRandomInt(this.backgroundObject.ceiling_height + flyThroughPadding, this.backgroundObject.floorLevel - flyThroughPadding - flyThroughHeight);
+    current_pipes.push(new Pipe(this.backgroundObject, this.playerObject, this.assets, rPos));
 }
 
 //End pipe manager class
 
 //Start Pipe class
 
-function Pipe(backgroundObject, playerObject, assets) {
+function Pipe(backgroundObject, playerObject, assets, boxTop) {
     this.renderReady = false;
     this.backgroundObject = backgroundObject;
     this.playerObject = playerObject;
@@ -403,18 +412,37 @@ function Pipe(backgroundObject, playerObject, assets) {
     this.pipeWidth = assets.pipeWidth;
     this.patternHeight = assets.patternHeight;
 
+    this.boxTop = boxTop;
+    
     this.loadAssets();
 }
 
 Pipe.prototype.loadAssets = function() {
     this.x = fatty_canvas.width;
-    //TEST 
-    //TODO: Move this to a manager that just creates lightweight copies of this Pipe. We should never load the assets more then once
-    this.boxTop = 140;
-    this.boxBottom = 230;
+    this.boxBottom = this.boxTop + flyThroughHeight; //The space is 15% of the view height
 
-    this.upwardsStride = ((this.boxTop - this.pipeHeight) - this.backgroundObject.ceiling_height) / this.patternHeight;
-    this.downwardsStride =  (this.backgroundObject.floorLevel - (this.boxBottom + this.pipeHeight)) / this.patternHeight;
+    this.downwardsStride = ((this.boxTop - this.pipeHeight) - this.backgroundObject.ceiling_height) / this.patternHeight;
+    this.upwardsStride =  (this.backgroundObject.floorLevel - (this.boxBottom + this.pipeHeight)) / this.patternHeight;
+    
+    //Create the downwardspattern
+    this.downwardsPattern = document.createElement("canvas"),
+    tCtx = this.downwardsPattern.getContext("2d");
+    var pipeLength = this.boxTop - this.pipeHeight;
+    this.downwardsPattern.height = pipeLength;
+    this.downwardsPattern.width = this.pipeWidth;
+    for(var i = 1; i < this.downwardsStride; i++) {
+        tCtx.drawImage(this.pipePatternSprite, 0, i, this.pipeWidth, 1);
+    }
+
+    //Create the upwards pattern
+    this.upwardsPattern = document.createElement("canvas"),
+    tCtx = this.upwardsPattern.getContext("2d");
+    pipeLength = this.backgroundObject.floorLevel - (this.boxBottom + this.pipeHeight);
+    this.upwardsPattern.height = pipeLength;
+    this.upwardsPattern.width = this.pipeWidth;
+    for(var i = 1; i < this.upwardsStride + 100; i++) {
+        tCtx.drawImage(this.pipePatternSprite, 0, i, this.pipeWidth, 1);
+    }
 }
 
 Pipe.prototype.update = function(deltaMS) {
@@ -425,18 +453,11 @@ Pipe.prototype.draw = function(deltaMS) {
     //Draw top pipe
     //Draw top part then repeat until we reach ceiling level
     fatty_context.drawImage(this.downwardsSprite, this.x, (this.boxTop - this.pipeHeight), this.pipeWidth, this.pipeHeight);
-    //Draw the pattern upwards
-    var pat=fatty_context.createPattern(this.pipePatternSprite,"repeat");
-    fatty_context.rect(this.x, current_background.ceiling_height, this.pipeWidth, this.boxTop - this.pipeHeight,100);
-    fatty_context.fillStyle=pat;
-    fatty_context.fill();
-    var i;
-    // for(i = 1; i < this.upwardsStride; i++) {
-    //     fatty_context.drawImage(this.pipePatternSprite, this.x, (this.boxTop - this.pipeHeight) - i, this.pipeWidth, 1);
-    // }
+    fatty_context.drawImage(this.downwardsPattern, this.x , this.backgroundObject.ceiling_height);
 
     //Draw bottom pipe
     fatty_context.drawImage(this.upwardsSprite, this.x, this.boxBottom, this.pipeWidth, this.pipeHeight);
+    fatty_context.drawImage(this.upwardsPattern, this.x , this.boxBottom + this.pipeHeight);
     // for(i = 1; i < this.downwardsStride; i++) {
     //     fatty_context.drawImage(this.pipePatternSprite, this.x, (this.boxBottom + this.pipeHeight) + i, this.pipeWidth, 1);
     // }
@@ -570,6 +591,15 @@ GameOverState.prototype.onEnd = function() {
 //GameOverState end
 
 //End states
+
+//Helpers
+
+/* Copied from https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/random */
+function getRandomInt(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min)) + min; //The maximum is exclusive and the minimum is inclusive
+}
 
 //Test
 var mousedown = false;
