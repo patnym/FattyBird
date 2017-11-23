@@ -402,8 +402,6 @@ function Pipe(backgroundObject, playerObject, assets) {
     this.pipeWidth = assets.pipeWidth;
     this.patternHeight = assets.patternHeight;
 
-    console.log(assets);
-
     this.loadAssets();
 }
 
@@ -553,7 +551,10 @@ GameOverState.prototype.onStart = function() {
 //This is a bit of clever haxxor. This will get called once, enuff to draw the entire screen once more  and lock it
 GameOverState.prototype.onUpdate = function(deltaMS) {    
     //draw
-    current_background.draw(deltaMS);    
+    current_background.draw(deltaMS);
+    current_pipes.forEach(pipe => {
+        pipe.draw(deltaMS);
+    });    
     current_player.draw(deltaMS);
 }
 
