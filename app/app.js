@@ -81,6 +81,7 @@ function switchState(state) {
  */
 function gameLoop() {
     //We could optimize this by only drawing the ceiling 
+    fatty_context.fillStyle = "#4ec0ca";
     fatty_context.fillRect(0, 0, fatty_canvas.width, fatty_canvas.height);    
 
     var deltaMS = Date.now() - fatty_timer;
@@ -425,6 +426,10 @@ Pipe.prototype.draw = function(deltaMS) {
     //Draw top part then repeat until we reach ceiling level
     fatty_context.drawImage(this.downwardsSprite, this.x, (this.boxTop - this.pipeHeight), this.pipeWidth, this.pipeHeight);
     //Draw the pattern upwards
+    var pat=fatty_context.createPattern(this.pipePatternSprite,"repeat");
+    fatty_context.rect(this.x, current_background.ceiling_height, this.pipeWidth, this.boxTop - this.pipeHeight,100);
+    fatty_context.fillStyle=pat;
+    fatty_context.fill();
     var i;
     // for(i = 1; i < this.upwardsStride; i++) {
     //     fatty_context.drawImage(this.pipePatternSprite, this.x, (this.boxTop - this.pipeHeight) - i, this.pipeWidth, 1);
