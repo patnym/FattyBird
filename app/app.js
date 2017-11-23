@@ -502,20 +502,20 @@ function PreState() {
 
 PreState.prototype.onStart = function() {
     //Create background
-    if(!current_background) {
-        fatty_log(VERBOSE_LEVEL, "No background created, creating..");
+    // if(!current_background) {
+    //     fatty_log(VERBOSE_LEVEL, "No background created, creating..");
         current_background = new Background();
-    } else {
-        fatty_log(VERBOSE_LEVEL, "Background already exists, reseting..");        
-        //Reset shit
-    }
+    // } else {
+    //     fatty_log(VERBOSE_LEVEL, "Background already exists, reseting..");        
+    //     //Reset shit
+    // }
 
-    if(!current_player) {
-        fatty_log(VERBOSE_LEVEL, "No player created yet, creating..");
+    // if(!current_player) {
+    //     fatty_log(VERBOSE_LEVEL, "No player created yet, creating..");
         current_player = new Player(current_background);
-    } else {
-        fatty_log(VERBOSE_LEVEL, "Player already exists, reseting..");
-    }
+    // } else {
+    //     fatty_log(VERBOSE_LEVEL, "Player already exists, reseting..");
+    // }
 
     if(!current_pipe_manager) {
         fatty_log(VERBOSE_LEVEL, "No pipe manager created yet, creating..");
@@ -537,6 +537,11 @@ PreState.prototype.onUpdate = function(deltaMS) {
     //draw
     current_background.draw(deltaMS);    
     current_player.draw(deltaMS);
+}
+
+PreState.prototype.onKeyDown = function() {
+    switchState(new RunningState());
+    current_state.onKeyDown();
 }
 
 PreState.prototype.onEnd = function() {
@@ -585,6 +590,10 @@ RunningState.prototype.isPlayerCollided = function(playerObject, backgroundObjec
     return false;
 }
 
+RunningState.prototype.onKeyDown = function() {
+    current_player.fly();
+}
+
 RunningState.prototype.onEnd = function() {
     gameRunning = false;
 }
@@ -610,8 +619,12 @@ GameOverState.prototype.onUpdate = function(deltaMS) {
     current_player.draw(0);
 }
 
-GameOverState.prototype.onEnd = function() {
+GameOverState.prototype.onKeyDown = function() {
+    switchState(new PreState());
+}
 
+GameOverState.prototype.onEnd = function() {
+    stopGameLoop();
 }
 
 //GameOverState end
@@ -632,8 +645,8 @@ var mousedown = false;
 
 function handleMouseDown() {
     if(mousedown) {
-        if(current_player && gameRunning) {
-            current_player.fly();
+        if(current_state) {
+            current_state.onKeyDown();
         }
     }
     mousedown = false;
@@ -642,15 +655,8 @@ function handleMouseDown() {
 //Key listeners
 window.onkeyup = function(e) {
     var code = e.keyCode ? e.keyCode : e.which;
-
     if(code === 32) {
-        if(current_player && gameRunning) {
-            mousedown = true;
-        }
-    } else if(code === 80) {
-        if(!(current_state instanceof RunningState)) {
-            switchState(new RunningState());
-        }
+        mousedown = true;
     }
 }
 
