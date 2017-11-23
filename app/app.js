@@ -5,6 +5,7 @@ var current_state;
 var current_player;
 var current_background;
 var current_pipes = [];
+var current_pipe_manager;
 
 //This was calibrated on a 600x400 canvas - I'd recommend you calibrating on a 600x400 canvas aswell if you are not happy with the feeling
 var gravity = 700;
@@ -311,56 +312,110 @@ Background.prototype.draw = function(deltaMS) {
 
 //End Background class
 
+//Start pipe manager class
+
+function PipeManager(playerObject, backgroundObject) {
+    this.playerObject = playerObject;
+    this.backgroundObject = backgroundObject;
+    this.assets = {};
+    this.loadAssets();
+    this.count = 1;
+    this.pipeSpacing = fatty_canvas.width * 0.33; //33% of the screen width between each pipe
+    this.currentSpacing = this.pipeSpacing;
+}
+
+PipeManager.prototype.loadAssets = function() {
+    this.assets.upwardsSprite = new Image();
+    this.assets.downwardsSprite = new Image();
+    this.assets.pipePatternSprite = new Image();
+    this.spriteCount = 3;
+    var me = this;
+    var onloaded = function () {
+        me.spriteCount--;
+
+        if(me.spriteCount === 0) {
+
+            var ratio = me.assets.downwardsSprite.height / me.assets.downwardsSprite.width;
+            //Pipe heights are the same regardless of orientation
+            me.assets.pipeWidth = me.playerObject.width * 1.5; //150% wider then the player
+            me.assets.pipeHeight = me.assets.pipeWidth * ratio;            
+
+            //Calculate the pattern heights and strides
+            me.assets.patternHeight = me.assets.pipePatternSprite.height;
+
+            me.readyUpdate = true;            
+            fatty_log(VERBOSE_LEVEL, "Successfully loaded pipe assets..");
+        }
+    }
+
+    this.assets.upwardsSprite.src = './assets/pipe-up.png';
+    this.assets.downwardsSprite.src = './assets/pipe-down.png';
+    this.assets.pipePatternSprite.src = './assets/pipe.png';
+
+    this.assets.upwardsSprite.onload = onloaded;
+    this.assets.downwardsSprite.onload = onloaded;
+    this.assets.pipePatternSprite.onload = onloaded;
+}
+
+PipeManager.prototype.update = function(deltaMS) {
+    if(!this.readyUpdate) {
+        return;
+    }
+
+    //Delete pipes
+    for(var i = current_pipes.length - 1; i >= 0; i--) {
+        if(current_pipes[i].x < -this.assets.pipeWidth) {
+            current_pipes.splice(i, 1);
+        }
+    }
+
+    //Create new if needed
+    this.currentSpacing -= background_velocity * (deltaMS / 1000);
+    if(this.currentSpacing < 0) {
+        this.createNewPipe();
+        this.currentSpacing = this.pipeSpacing;
+    }
+
+    //Check pipe collisions here maybe?
+}
+
+PipeManager.prototype.createNewPipe = function() {
+    current_pipes.push(new Pipe(this.backgroundObject, this.playerObject, this.assets))
+}
+
+//End pipe manager class
+
 //Start Pipe class
 
-function Pipe(backgroundObject, playerObject) {
+function Pipe(backgroundObject, playerObject, assets) {
     this.renderReady = false;
     this.backgroundObject = backgroundObject;
     this.playerObject = playerObject;
+
+    //Save sprites
+    this.upwardsSprite = assets.upwardsSprite;
+    this.downwardsSprite = assets.downwardsSprite;
+    this.pipePatternSprite = assets.pipePatternSprite;
+
+    //Precalculated scaling
+    this.pipeHeight = assets.pipeHeight;
+    this.pipeWidth = assets.pipeWidth;
+    this.patternHeight = assets.patternHeight;
+
+    console.log(assets);
+
     this.loadAssets();
 }
 
 Pipe.prototype.loadAssets = function() {
-    this.upwardsSprite = new Image();
-    this.downwardsSprite = new Image();
-    this.pipePatternSprite = new Image();
-    this.spriteCount = 3;
-
     this.x = fatty_canvas.width;
     //TEST 
     //TODO: Move this to a manager that just creates lightweight copies of this Pipe. We should never load the assets more then once
     this.boxTop = 140;
     this.boxBottom = 230;
 
-    var pipe = this;
-    var onloaded = function () {
-        pipe.spriteCount--;
-
-        if(pipe.spriteCount === 0) {
-
-            var ratio = pipe.downwardsSprite.height / pipe.downwardsSprite.width;
-            //Pipe heights are the same regardless of orientation
-            pipe.pipeWidth = pipe.playerObject.width * 1.5; //150% wider then the player
-            pipe.pipeHeight = pipe.pipeWidth * ratio;
-
-            //Calculate the pattern heights and strides
-            pipe.patternHeight = pipe.pipePatternSprite.height;
-
-            pipe.upwardsStride = ((pipe.boxTop - pipe.pipeHeight) - pipe.backgroundObject.ceiling_height) / pipe.patternHeight;
-            pipe.downwardsStride =  (pipe.backgroundObject.floorLevel - (pipe.boxBottom + pipe.pipeHeight)) / pipe.patternHeight;
-
-            pipe.renderReady = true;            
-            fatty_log(VERBOSE_LEVEL, "Successfully loaded pipe assets..");
-        }
-    }
-
-    this.upwardsSprite.src = './assets/pipe-up.png';
-    this.downwardsSprite.src = './assets/pipe-down.png';
-    this.pipePatternSprite.src = './assets/pipe.png';
-
-    this.upwardsSprite.onload = onloaded;
-    this.downwardsSprite.onload = onloaded;
-    this.pipePatternSprite.onload = onloaded;
+    this.upwardsStride = ((this.boxTop - this.pipeHeight) - this.backgroundObject.ceiling_height) / this.patternHeight;
+    this.downwardsStride =  (this.backgroundObject.floorLevel - (this.boxBottom + this.pipeHeight)) / this.patternHeight;
 }
 
 Pipe.prototype.update = function(deltaMS) {
@@ -368,23 +423,20 @@ Pipe.prototype.update = function(deltaMS) {
 }
 
 Pipe.prototype.draw = function(deltaMS) {
-    if(this.renderReady) {
+    //Draw top pipe
+    //Draw top part then repeat until we reach ceiling level
+    fatty_context.drawImage(this.downwardsSprite, this.x, (this.boxTop - this.pipeHeight), this.pipeWidth, this.pipeHeight);
+    //Draw the pattern upwards
+    var i;
+    // for(i = 1; i < this.upwardsStride; i++) {
+    //     fatty_context.drawImage(this.pipePatternSprite, this.x, (this.boxTop - this.pipeHeight) - i, this.pipeWidth, 1);
+    // }
 
-        //Draw top pipe
-        //Draw top part then repeat until we reach ceiling level
-        fatty_context.drawImage(this.downwardsSprite, this.x, (this.boxTop - this.pipeHeight), this.pipeWidth, this.pipeHeight);
-        //Draw the pattern upwards
-        var i;
-        for(i = 1; i < this.upwardsStride; i++) {
-            fatty_context.drawImage(this.pipePatternSprite, this.x, (this.boxTop - this.pipeHeight) - i, this.pipeWidth, 1);
-        }
-
-        //Draw bottom pipe
-        fatty_context.drawImage(this.upwardsSprite, this.x, this.boxBottom, this.pipeWidth, this.pipeHeight);
-        for(i = 1; i < this.downwardsStride; i++) {
-            fatty_context.drawImage(this.pipePatternSprite, this.x, (this.boxBottom + this.pipeHeight) + i, this.pipeWidth, 1);
-        }
-    }
+    //Draw bottom pipe
+    fatty_context.drawImage(this.upwardsSprite, this.x, this.boxBottom, this.pipeWidth, this.pipeHeight);
+    // for(i = 1; i < this.downwardsStride; i++) {
+    //     fatty_context.drawImage(this.pipePatternSprite, this.x, (this.boxBottom + this.pipeHeight) + i, this.pipeWidth, 1);
+    // }
 }
 
 //End pipe class
@@ -413,6 +465,13 @@ PreState.prototype.onStart = function() {
         //Just reset to avoid loading assets twice
         //TODO: Fix reset function
     }
+
+    if(!current_pipe_manager) {
+        fatty_log(VERBOSE_LEVEL, "No pipe manager created yet, creating..");
+        current_pipe_manager = new PipeManager(current_player, current_background);
+    } else {
+        fatty_log(VERBOSE_LEVEL, "Pipe manager exists, reseting..");
+    }
     
     fatty_timer = Date.now();
     fatty_context.fillStyle = "#4ec0ca";
@@ -440,9 +499,6 @@ function RunningState() {
 
 RunningState.prototype.onStart = function() {
     gameRunning = true;
-
-    //TEST
-    current_pipes.push(new Pipe(current_background, current_player));
 }
 
 RunningState.prototype.onUpdate = function(deltaMS) {
@@ -453,7 +509,8 @@ RunningState.prototype.onUpdate = function(deltaMS) {
     } else {
         //update
         current_background.update(deltaMS);
-        current_player.update(deltaMS);        
+        current_player.update(deltaMS);  
+        current_pipe_manager.update(deltaMS);      
         current_pipes.forEach(pipe => {
             pipe.update(deltaMS);
         });
