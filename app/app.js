@@ -50,8 +50,15 @@ function setup(containerId, width, height) {
     containerElement.appendChild(fatty_canvas);
 
     fatty_canvas.onmouseup = function(e) { 
-        if(current_player && gameRunning) {
-            mousedown = true;
+        if(current_player) {
+            current_state.onKeyDown();
+        }
+    }
+    //Key listeners
+    window.onkeyup = function(e) {
+        var code = e.keyCode ? e.keyCode : e.which;
+        if(code === 32) {
+            current_state.onKeyDown();
         }
     }
 
@@ -100,7 +107,7 @@ function gameLoop() {
     fatty_timer = Date.now();
 
     //Handle any mouse events
-    handleMouseDown();
+    //handleMouseDown();
 
     current_state.onUpdate(deltaMS);
 
@@ -158,9 +165,15 @@ function Player(backgroundObject) {
     this.backgroundObject = backgroundObject;
 }
 
+Player.prototype.init = function() {
+    this.velocity = 0;
+    this.rotation = 0;
+    this.x =  fatty_canvas.width * 0.1;
+    this.y = (fatty_canvas.height * 0.5) - this.height * 0.5;
+}
+
 //Load all graphical assets
 Player.prototype.loadAssets = function() {
-    this.velocity = 0;
     this.sprite = new Image();
     this.SPRITE_STRIDE = 24; //The height of each model in the sprite
     this.totalStride = 0;
@@ -177,10 +190,8 @@ Player.prototype.loadAssets = function() {
 
         fatty_log(INFO_LEVEL, "Player resized to " + player.width + "x" + player.height);
 
-        player.x =  fatty_canvas.width * 0.1;
-        player.y = (fatty_canvas.height * 0.5) - player.height * 0.5;
+        player.init();
     }
-    this.rotation = 0;
     this.sprite.src = './assets/bird.png';
 }
 
@@ -236,15 +247,14 @@ Player.prototype.draw = function(deltaMS) {
 //End player class
 
 //Start Background class
-function Background() {
-    this.floorLevel = 350;
-    this.floorHeight = 30;
-    this.backgroundHeight =  110;
+function Background() { 
+    this.loadAssets();
+}
+
+Background.prototype.init = function() {
     this.floorX = 0;
     this.ceilingX = 0;
     this.bgX = 0;
-    
-    this.loadAssets();
 }
 
 Background.prototype.loadAssets = function() {
@@ -282,6 +292,8 @@ Background.prototype.loadAssets = function() {
             bg.FLOOR_STRIDE = Math.ceil((fatty_canvas.width + bg.floor_width) / bg.floor_width);
             bg.CEILING_STRIDE = Math.ceil((fatty_canvas.width + bg.ceiling_width) / bg.ceiling_width);
             bg.BG_STRIDE = Math.ceil((fatty_canvas.width + bg.backgroundSprite.width) / bg.backgroundSprite.width);
+
+            bg.init();
         }
     }
     this.floorSprite.onload = onLoaded;
@@ -336,9 +348,12 @@ function PipeManager(playerObject, backgroundObject) {
     this.backgroundObject = backgroundObject;
     this.assets = {};
     this.loadAssets();
-    this.count = 1;
     this.pipeSpacing = background_velocity * 1.5;
+}
+
+PipeManager.prototype.init = function() {
     this.currentSpacing = this.pipeSpacing;
+    current_pipes = [];
 }
 
 PipeManager.prototype.loadAssets = function() {
@@ -362,6 +377,8 @@ PipeManager.prototype.loadAssets = function() {
 
             me.readyUpdate = true;            
             fatty_log(VERBOSE_LEVEL, "Successfully loaded pipe assets..");
+
+            me.init();
         }
     }
 
@@ -502,26 +519,28 @@ function PreState() {
 
 PreState.prototype.onStart = function() {
     //Create background
-    // if(!current_background) {
-    //     fatty_log(VERBOSE_LEVEL, "No background created, creating..");
+    if(!current_background) {
+        fatty_log(VERBOSE_LEVEL, "No background created, creating..");
         current_background = new Background();
-    // } else {
-    //     fatty_log(VERBOSE_LEVEL, "Background already exists, reseting..");        
-    //     //Reset shit
-    // }
+    } else {
+        fatty_log(VERBOSE_LEVEL, "Background already exists, reseting..");        
+        current_background.init();
+    }
 
-    // if(!current_player) {
-    //     fatty_log(VERBOSE_LEVEL, "No player created yet, creating..");
+    if(!current_player) {
+        fatty_log(VERBOSE_LEVEL, "No player created yet, creating..");
         current_player = new Player(current_background);
-    // } else {
-    //     fatty_log(VERBOSE_LEVEL, "Player already exists, reseting..");
-    // }
+    } else {
+        fatty_log(VERBOSE_LEVEL, "Player already exists, reseting..");
+        current_player.init();
+    }
 
     if(!current_pipe_manager) {
         fatty_log(VERBOSE_LEVEL, "No pipe manager created yet, creating..");
         current_pipe_manager = new PipeManager(current_player, current_background);
     } else {
         fatty_log(VERBOSE_LEVEL, "Pipe manager exists, reseting..");
+        current_pipe_manager.init();
     }
     
     fatty_timer = Date.now();
@@ -650,14 +669,6 @@ function handleMouseDown() {
         }
     }
     mousedown = false;
-}
-
-//Key listeners
-window.onkeyup = function(e) {
-    var code = e.keyCode ? e.keyCode : e.which;
-    if(code === 32) {
-        mousedown = true;
-    }
 }
 
 /**
