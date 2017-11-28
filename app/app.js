@@ -16,6 +16,8 @@ var background_velocity = 100; //?
 var flyThroughHeight; //Calculated during setup
 var flyThroughPadding; //Calculated during setup
 
+var highscoreFontSize = 45; //Gets calculated via playerheight * 2 on PreState start
+
 var score = 0;
 
 var gameRunning = false;
@@ -73,6 +75,8 @@ function fatty_bird_setup(containerId, width, height) {
     upwards_force *= fatty_canvas.height / 400;
     background_velocity *= fatty_canvas.height / 400;
 
+    highscoreFontSize *= fatty_canvas.height / 400;
+
     flyThroughHeight = fatty_canvas.height * 0.18;
     flyThroughPadding = fatty_canvas.height * 0.1;
 
@@ -95,6 +99,10 @@ function addToHighscore() {
     fatty_log(INFO_LEVEL, "Score is: " + score);
 }
 
+function resetHighscore() {
+    score = 0;
+}
+
 /**
  * Begin game loop - this loop is naive and doesnt catchup very well. But will do the job for now
  */
@@ -111,6 +119,8 @@ function gameLoop() {
 
     current_state.onUpdate(deltaMS);
 
+    drawScore();
+    
     if(rendering) {
         requestAnimFrame( gameLoop );    
     } else {
@@ -118,6 +128,17 @@ function gameLoop() {
         current_state.onUpdate(0);
         fatty_log(INFO_LEVEL, "Game loop stopped.");
     }
+}
+
+function drawScore() {
+    fatty_context.save();
+    fatty_context.font = highscoreFontSize + "px Impact";
+    fatty_context.fillStyle = "white";
+    fatty_context.textAlign = "center";
+    fatty_context.fillText(score, fatty_canvas.width/2, current_background.ceiling_height + highscoreFontSize); 
+    fatty_context.fillStyle = "black";
+    fatty_context.strokeText(score, fatty_canvas.width/2, current_background.ceiling_height + highscoreFontSize); 
+    fatty_context.restore();
 }
 
 function startGameLoop() {
@@ -545,6 +566,8 @@ PreState.prototype.onStart = function() {
     
     fatty_timer = Date.now();
     fatty_context.fillStyle = "#4ec0ca";
+
+    resetHighscore();
 
     startGameLoop();
 }
