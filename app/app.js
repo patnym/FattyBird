@@ -23,7 +23,7 @@ var rendering = false;
 var fatty_timer;
 
 //Needs get called once - If widht and heights are specified use it, otherwise use the containerid dimensions
-function setup(containerId, width, height) {
+function fatty_bird_setup(containerId, width, height) {
     var containerElement = document.getElementById(containerId);
 
     current_log_level = VERBOSE_LEVEL;
@@ -40,27 +40,27 @@ function setup(containerId, width, height) {
 
     if(!fatty_canvas) {
 
-    fatty_canvas = document.createElement('canvas');
+        fatty_canvas = document.createElement('canvas');
 
-    fatty_canvas.id = 'fatty_canvas';
-    fatty_canvas.width = width || containerElement.clientWidth;
-    fatty_canvas.height = height || containerElement.clientHeight;
-    
-    //Attach our canvas
-    containerElement.appendChild(fatty_canvas);
+        fatty_canvas.id = 'fatty_canvas';
+        fatty_canvas.width = width || containerElement.clientWidth;
+        fatty_canvas.height = height || containerElement.clientHeight;
+        
+        //Attach our canvas
+        containerElement.appendChild(fatty_canvas);
 
-    fatty_canvas.onmouseup = function(e) { 
-        if(current_player) {
-            current_state.onKeyDown();
+        fatty_canvas.onmouseup = function(e) { 
+            if(current_player) {
+                current_state.onKeyDown();
+            }
         }
-    }
-    //Key listeners
-    window.onkeyup = function(e) {
-        var code = e.keyCode ? e.keyCode : e.which;
-        if(code === 32) {
-            current_state.onKeyDown();
+        //Key listeners
+        window.onkeyup = function(e) {
+            var code = e.keyCode ? e.keyCode : e.which;
+            if(code === 32) {
+                current_state.onKeyDown();
+            }
         }
-    }
 
     }
 
