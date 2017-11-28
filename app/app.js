@@ -184,6 +184,7 @@ function Player(backgroundObject) {
     this.ANIMATION_CYCLE_SPEED = 100 / 4; 
     this.anim_timer = this.ANIMATION_CYCLE_SPEED;
     this.backgroundObject = backgroundObject;
+    this.rotationFactor = upwards_force * -2.2;
 }
 
 Player.prototype.init = function() {
@@ -226,7 +227,7 @@ Player.prototype.update = function(deltaMS) {
     this.velocity += gravity * (deltaMS / 1000);
     this.y += this.velocity * (deltaMS / 1000);
 
-    this.rotation = Math.min((this.velocity / 1000) * 90, 90);
+    this.rotation = Math.min((this.velocity / this.rotationFactor) * 90, 90);
 
     //Correct my height to collide with the ceiling
     if(this.y <= this.backgroundObject.ceiling_height + (this.height / 2)) {
