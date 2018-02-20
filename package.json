@@ -1,0 +1,26 @@
+{
+  "name": "FattyBird",
+  "version": "1.0.0",
+  "description": "The popular Flappybird game implemented in a HTML canvas",
+  "main": "lib/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "react-build-lib",
+    "clean": "rm -rf lib",
+    "prepublish": "npm run clean && NODE_ENV=production && npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/patnym/FattyBird.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/patnym/FattyBird/issues"
+  },
+  "homepage": "https://github.com/patnym/FattyBird#readme",
+  "devDependencies": {
+    "react-build-lib": "0.0.2"
+  }
+}
