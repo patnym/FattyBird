@@ -39,7 +39,7 @@ export class Pipe {
         }
 
         //Create the upwards pattern
-        this.upwardsPattern = document.createElement("canvas"),
+        this.upwardsPattern = document.createElement("canvas");
         tCtx = this.upwardsPattern.getContext("2d");
         pipeLength = this.backgroundObject.floorLevel - (this.boxBottom + this.pipeHeight);
         this.upwardsPattern.height = pipeLength;
@@ -50,7 +50,7 @@ export class Pipe {
     }
 
     update(deltaMS) {
-        this.x -= this.globals.background_velocity * (deltaMS / 1000);
+        this.x -=  this.globals.background_velocity * (deltaMS / 1000);
     }
 
     draw(deltaMS) {

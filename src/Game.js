@@ -213,8 +213,8 @@ function drawScore() {
  */
 function gameLoop() {
     //We could optimize this by only drawing the ceiling 
-    globs.fatty_context.fillStyle = "#4ec0ca";
-    globs.fatty_context.fillRect(0, 0, globs.fatty_canvas.width, globs.fatty_canvas.height);    
+    // globs.fatty_context.fillStyle = "#4ec0ca";
+    // globs.fatty_context.fillRect(0, 0, globs.fatty_canvas.width, globs.fatty_canvas.height);    
 
     var deltaMS = Date.now() - globs.fatty_timer;
     globs.fatty_timer = Date.now();
