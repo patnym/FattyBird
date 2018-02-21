@@ -59,9 +59,12 @@ export class Background {
         this.ceilingSprite.onload = onLoaded;
         this.backgroundSprite.onload = onLoaded;
 
-        this.floorSprite.src = this.globals.assetPath + '/assets/land.png';
-        this.ceilingSprite.src = this.globals.assetPath + '/assets/ceiling.png';
-        this.backgroundSprite.src = this.globals.assetPath + '/assets/sky.png';
+        // this.floorSprite.src = this.globals.assetPath + '/assets/land.png';
+        // this.ceilingSprite.src = this.globals.assetPath + '/assets/ceiling.png';
+        // this.backgroundSprite.src = this.globals.assetPath + '/assets/sky.png';
+        this.floorSprite.src = this.globals.assetStruct.floorSprite;
+        this.ceilingSprite.src = this.globals.assetStruct.ceilingSprite;
+        this.backgroundSprite.src = this.globals.assetStruct.backgroundSprite;
     }
 
     update(deltaMS) {

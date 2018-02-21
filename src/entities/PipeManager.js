@@ -45,9 +45,13 @@ export class PipeManager {
             }
         }
 
-        this.assets.upwardsSprite.src = this.globals.assetPath + '/assets/pipe-up.png';
-        this.assets.downwardsSprite.src = this.globals.assetPath + '/assets/pipe-down.png';
-        this.assets.pipePatternSprite.src = this.globals.assetPath + '/assets/pipe.png';
+        // this.assets.upwardsSprite.src = this.globals.assetPath + '/assets/pipe-up.png';
+        // this.assets.downwardsSprite.src = this.globals.assetPath + '/assets/pipe-down.png';
+        // this.assets.pipePatternSprite.src = this.globals.assetPath + '/assets/pipe.png';
+        console.log("Loading", this.globals.assetStruct);
+        this.assets.upwardsSprite.src = this.globals.assetStruct.upwardsSprite;
+        this.assets.downwardsSprite.src = this.globals.assetStruct.downwardsSprite;
+        this.assets.pipePatternSprite.src = this.globals.assetStruct.pipePatternSprite;
 
         this.assets.upwardsSprite.onload = onloaded;
         this.assets.downwardsSprite.onload = onloaded;

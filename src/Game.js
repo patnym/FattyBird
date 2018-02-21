@@ -43,6 +43,7 @@ export class Game extends Component {
         this.globals.fatty_timer = -1;
 
         this.globals.assetPath = "";
+        this.globals.assetStruct = {};
 
         this.globals.current_log_level = 2;
 
@@ -73,8 +74,8 @@ export class Game extends Component {
     }
 
     componentDidMount() {
+        this.globals.assetStruct = this.props.assetStruct;
         this.fatty_bird_setup(this.props.width, this.props.height);
-        this.globals.assetPath = this.props.assetPath;
     }
 
     //Needs get called once - If widht and heights are specified use it, otherwise use the containerid dimensions

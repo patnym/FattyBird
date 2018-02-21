@@ -41,7 +41,7 @@ export class Player {
 
             player.init();
         }
-        this.sprite.src = this.globals.assetPath + '/assets/bird.png';
+        this.sprite.src = this.globals.assetStruct.birdSprite;
     }
 
     fly() {
