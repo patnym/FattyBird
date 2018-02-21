@@ -12,6 +12,7 @@ export class PipeManager {
         this.assets = {};
         this.loadAssets();
         this.pipeSpacing = this.globals.background_velocity * 1.5;
+        this.velocity = this.globals.background_velocity / 1000;
     }
 
     init() {
@@ -64,25 +65,25 @@ export class PipeManager {
         }
 
         //Delete pipes
-        for(var i = this.globals.current_pipes.length - 1; i >= 0; i--) {
-            if(this.globals.current_pipes[i].x < -this.assets.pipeWidth) {
-                this.globals.current_pipes.splice(i, 1);
-            }
-        }
+        // for(this.i = this.globals.current_pipes.length - 1; this.i >= 0; this.i--) {
+        //     if(this.globals.current_pipes[this.i].x < -this.assets.pipeWidth) {
+        //         this.globals.current_pipes.splice(this.i, 1);
+        //     }
+        // }
 
         //Create new if needed
-        this.currentSpacing -= this.globals.background_velocity * (deltaMS / 1000);
+        this.currentSpacing -= this.velocity * deltaMS;
         if(this.currentSpacing < 0) {
             this.createNewPipe();
             this.currentSpacing = this.pipeSpacing;
         }
 
         //Check pipe collisions here maybe
-        this.globals.current_pipes.forEach(pipe => {
-            if(pipe.isPlayerColliding(this.playerObject)) {
+        for(this.i = 0; this.i < this.globals.current_pipes.length; this.i++) {
+            if(this.globals.current_pipes[this.i].isPlayerColliding(this.playerObject)) {
                 this.GameObj.switchState(new GameOverState(this.GameObj));
             }
-        });
+        }
     }
 
     createNewPipe() {

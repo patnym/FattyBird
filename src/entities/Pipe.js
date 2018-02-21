@@ -56,12 +56,12 @@ export class Pipe {
     draw(deltaMS) {
         //Draw top pipe
         //Draw top part then repeat until we reach ceiling level
-        this.globals.fatty_context.drawImage(this.downwardsSprite, this.x, (this.boxTop - this.pipeHeight), this.pipeWidth, this.pipeHeight);
-        this.globals.fatty_context.drawImage(this.downwardsPattern, this.x , this.backgroundObject.ceiling_height);
+        this.globals.fatty_context.drawImage(this.downwardsSprite, Math.floor(this.x), Math.floor(this.boxTop - this.pipeHeight), Math.floor(this.pipeWidth), Math.floor(this.pipeHeight));
+        this.globals.fatty_context.drawImage(this.downwardsPattern, Math.floor(this.x) , Math.floor(this.backgroundObject.ceiling_height));
 
         //Draw bottom pipe
-        this.globals.fatty_context.drawImage(this.upwardsSprite, this.x, this.boxBottom, this.pipeWidth, this.pipeHeight);
-        this.globals.fatty_context.drawImage(this.upwardsPattern, this.x , this.boxBottom + this.pipeHeight);
+        this.globals.fatty_context.drawImage(this.upwardsSprite, Math.floor(this.x), Math.floor(this.boxBottom), Math.floor(this.pipeWidth), Math.floor(this.pipeHeight));
+        this.globals.fatty_context.drawImage(this.upwardsPattern, Math.floor(this.x) , Math.floor(this.boxBottom + this.pipeHeight));
     }
 
     isPlayerColliding(playerObject) {

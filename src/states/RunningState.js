@@ -5,6 +5,8 @@ export class RunningState {
     constructor(GameObj) {
         this.GameObj = GameObj;
         this.globals = GameObj.globals;
+        this.i = 0;
+        this.pbb = {};
     }
 
     onStart() {
@@ -20,16 +22,16 @@ export class RunningState {
             //update
             this.globals.current_background.update(deltaMS);
             this.globals.current_player.update(deltaMS);  
-            this.globals.current_pipe_manager.update(deltaMS);      
-            this.globals.current_pipes.forEach(pipe => {
-                pipe.update(deltaMS);
-            });
+            this.globals.current_pipe_manager.update(deltaMS);
+            for(this.i = 0; this.i < this.globals.current_pipes.length; this.i++) {
+                this.globals.current_pipes[this.i].update(deltaMS);
+            }
 
             //draw
             this.globals.current_background.draw(deltaMS);    
-            this.globals.current_pipes.forEach(pipe => {
-                pipe.draw(deltaMS);
-            });
+            for(this.i = 0; this.i < this.globals.current_pipes.length; this.i++) {
+                this.globals.current_pipes[this.i].draw(deltaMS);
+            }
             this.globals.current_player.draw(deltaMS);
         }
     }
@@ -37,8 +39,8 @@ export class RunningState {
     isPlayerCollided(playerObject, backgroundObjects, pipeObjectsList) {
         //Check if we have collided with the world
         //Check floor
-        var pbb = playerObject.getBoundingBox();
-        if( (pbb.topLeft.y + pbb.height) >= backgroundObjects.floorLevel ) {
+        this.pbb = playerObject.getBoundingBox();
+        if( (this.pbb.topLeft.y + this.pbb.height) >= backgroundObjects.floorLevel ) {
             return true;
         }
         return false;

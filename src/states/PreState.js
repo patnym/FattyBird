@@ -15,9 +15,11 @@ export class PreState {
 
     onStart() {
         //Create background
+        this.loading = false;
         if(!this.globals.current_background) {
             this.GameObj.fatty_log(VERBOSE_LEVEL, "No background created, creating..");
             this.globals.current_background = new Background(this.GameObj);
+            this.loading = true;
         } else {
             this.GameObj.fatty_log(VERBOSE_LEVEL, "Background already exists, reseting..");        
             this.globals.current_background.init();
@@ -26,6 +28,7 @@ export class PreState {
         if(!this.globals.current_player) {
             this.GameObj.fatty_log(VERBOSE_LEVEL, "No player created yet, creating..");
             this.globals.current_player = new Player(this.GameObj, this.globals.current_background);
+            this.loading = true;
         } else {
             this.GameObj.fatty_log(VERBOSE_LEVEL, "Player already exists, reseting..");
             this.globals.current_player.init();
@@ -34,6 +37,7 @@ export class PreState {
         if(!this.globals.current_pipe_manager) {
             this.GameObj.fatty_log(VERBOSE_LEVEL, "No pipe manager created yet, creating..");
             this.globals.current_pipe_manager = new PipeManager(this.GameObj, this.globals.current_player, this.globals.current_background);
+            this.loading = true;
         } else {
             this.GameObj.fatty_log(VERBOSE_LEVEL, "Pipe manager exists, reseting..");
             this.globals.current_pipe_manager.init();
@@ -43,8 +47,12 @@ export class PreState {
         this.globals.fatty_context.fillStyle = "#4ec0ca";
 
         this.GameObj.resetHighscore();
-
-        this.GameObj.startGameLoop();
+        
+        if(this.loading) {
+            setTimeout(() => { this.GameObj.startGameLoop() }, 500); //Give it 500 ms to load if its first time
+        } else {
+            this.GameObj.startGameLoop();
+        }
     }
 
     onUpdate(deltaMS) {

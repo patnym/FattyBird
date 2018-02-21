@@ -7,6 +7,7 @@ export class Background {
         this.GameObj = GameObj;
         this.globals = GameObj.globals;
         this.loadAssets();
+        this.velocity = this.globals.background_velocity / 1000;
     }
 
 
@@ -83,18 +84,15 @@ export class Background {
         this.ceilingSprite.onload = onLoaded;
         this.backgroundSprite.onload = onLoaded;
 
-        // this.floorSprite.src = this.globals.assetPath + '/assets/land.png';
-        // this.ceilingSprite.src = this.globals.assetPath + '/assets/ceiling.png';
-        // this.backgroundSprite.src = this.globals.assetPath + '/assets/sky.png';
         this.floorSprite.src = this.globals.assetStruct.floorSprite;
         this.ceilingSprite.src = this.globals.assetStruct.ceilingSprite;
         this.backgroundSprite.src = this.globals.assetStruct.backgroundSprite;
     }
 
     update(deltaMS) {
-        this.floorX -= this.globals.background_velocity * (deltaMS / 1000);
+        this.floorX -= this.velocity * deltaMS;
 
-        if(this.floorX < -this.globals.fatty_canvas.width * 2) {
+        if(this.floorX < -this.backgroundPattern.width) {
            this.floorX += this.floorX * -1;
         }
     }
@@ -102,7 +100,7 @@ export class Background {
     draw(deltaMS) {
         if(this.renderReady) {
             this.globals.fatty_context.drawImage(this.backgroundPattern, this.floorX, 0);
-            this.globals.fatty_context.drawImage(this.backgroundPattern, this.floorX + (this.globals.fatty_canvas.width * 2), 0);
+            this.globals.fatty_context.drawImage(this.backgroundPattern, this.floorX + this.backgroundPattern.width, 0);
         }
     }
 }

@@ -54,7 +54,7 @@ export class Player {
         this.velocity += this.globals.gravity * (deltaMS / 1000);
         this.y += this.velocity * (deltaMS / 1000);
 
-        this.rotation = Math.min((this.velocity / this.rotationFactor) * 90, 90);
+        this.rotation = Math.min((this.velocity / this.rotationFactor) * 90, 90) / 180;
 
         //Correct my height to collide with the ceiling
         if(this.y <= this.backgroundObject.ceiling_height + (this.height / 2)) {
@@ -87,8 +87,8 @@ export class Player {
             }
             this.globals.fatty_context.save();
             this.globals.fatty_context.translate(this.x , this.y);
-            this.globals.fatty_context.rotate(this.rotation * Math.PI/180);
-            this.globals.fatty_context.drawImage(this.sprite, 0, this.totalStride, 34, this.SPRITE_STRIDE, (-this.width / 2), -this.height/2, this.width, this.height);
+            this.globals.fatty_context.rotate(this.rotation * Math.PI);
+            this.globals.fatty_context.drawImage(this.sprite, 0, this.totalStride, 34, this.SPRITE_STRIDE, -this.width / 2, -this.height/2, this.width, this.height);
             this.globals.fatty_context.restore();                
         }
     }

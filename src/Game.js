@@ -151,13 +151,15 @@ export class Game extends Component {
     startGameLoop() {
         this.fatty_log(INFO_LEVEL, "Starting gameloop..");
         this.globals.rendering = true;
-        gameLoop();
+        requestAnimFrame( gameLoop );
     }
 
     //Sets rendering to false which will stop the gameloop
-    stopGameLoop() {
+    stopGameLoop(callback) {
         this.fatty_log(INFO_LEVEL, "Stopping gameloop..");
         this.globals.rendering = false;
+        //Gives the render loop LOTS of time to finish the last render call
+        setTimeout(callback, 150);
     }
 
     addToHighscore() {
@@ -195,42 +197,42 @@ export class Game extends Component {
     }
 
 }
-
-function drawScore() {
+var fps = 0;
+function drawFPS(ms) {
+    fps = Math.floor(1000 / ms);
     globs.fatty_context.save();
     globs.fatty_context.font = globs.highscoreFontSize + "px Impact";
     globs.fatty_context.fillStyle = "white";
     globs.fatty_context.textAlign = "center";
-    globs.fatty_context.fillText(globs.score, globs.fatty_canvas.width/2, globs.current_background.ceiling_height + globs.highscoreFontSize); 
-    globs.fatty_context.fillStyle = "black";
-    globs.fatty_context.strokeText(globs.score, globs.fatty_canvas.width/2, globs.current_background.ceiling_height + globs.highscoreFontSize); 
+    globs.fatty_context.fillText(fps, globs.fatty_canvas.width/2, globs.current_background.ceiling_height + globs.highscoreFontSize); 
+    //globs.fatty_context.fillStyle = "black";
+    //globs.fatty_context.strokeText(globs.score, globs.fatty_canvas.width/2, globs.current_background.ceiling_height + globs.highscoreFontSize); 
     globs.fatty_context.restore();
+
+    if(fps < 40) {
+        console.log(VERBOSE_LEVEL, "Critical FPS drop");
+    }
 }
 
 
 /**
  * Begin game loop - this loop is naive and doesnt catchup very well. But will do the job for now
  */
-function gameLoop() {
-    //We could optimize this by only drawing the ceiling 
-    // globs.fatty_context.fillStyle = "#4ec0ca";
-    // globs.fatty_context.fillRect(0, 0, globs.fatty_canvas.width, globs.fatty_canvas.height);    
-
-    var deltaMS = Date.now() - globs.fatty_timer;
+var deltaMS = 0;
+function gameLoop() {  
+    deltaMS = Date.now() - globs.fatty_timer;
     globs.fatty_timer = Date.now();
-
-    //Handle any mouse events
-    //handleMouseDown();
 
     globs.current_state.onUpdate(deltaMS);
 
-    drawScore();
-    
+    drawFPS(deltaMS);
+
     if(globs.rendering) {
         requestAnimFrame( gameLoop );    
     } else {
         //Call one last update with 0 time since we wanna stop drawing. This prevents the overlay fillrect from "deleting" everything
         globs.current_state.onUpdate(0);
+        console.log("Stopped rendering...");
     }
 }
 
