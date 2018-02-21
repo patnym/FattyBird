@@ -39,6 +39,15 @@ export class PipeManager {
                 //Calculate the pattern heights and strides
                 me.assets.patternHeight = me.assets.pipePatternSprite.height;
 
+                me.assets.fullPattern = document.createElement("canvas");
+                var tCtx = me.assets.fullPattern.getContext("2d");
+                me.assets.fullPattern.height = me.globals.fatty_canvas.height;
+                me.assets.fullPattern.width = me.assets.pipeWidth;
+                var PATTERN_STRIDE = me.assets.fullPattern.height / me.assets.patternHeight;
+                for(var i = 0; i < PATTERN_STRIDE; i++) {
+                    tCtx.drawImage(me.assets.pipePatternSprite, 0, i, me.assets.pipeWidth, 1);
+                }
+
                 me.readyUpdate = true;            
                 me.GameObj.fatty_log(VERBOSE_LEVEL, "Successfully loaded pipe assets..");
 

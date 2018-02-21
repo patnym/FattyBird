@@ -10,6 +10,7 @@ export class Pipe {
         this.upwardsSprite = assets.upwardsSprite;
         this.downwardsSprite = assets.downwardsSprite;
         this.pipePatternSprite = assets.pipePatternSprite;
+        this.fullPattern = assets.fullPattern;
 
         //Precalculated scaling
         this.pipeHeight = assets.pipeHeight;
@@ -25,28 +26,10 @@ export class Pipe {
         this.x = fatty_canvas.width;
         this.boxBottom = this.boxTop + this.globals.flyThroughHeight; //The space is 15% of the view height
 
-        this.downwardsStride = ((this.boxTop - this.pipeHeight) - this.backgroundObject.ceiling_height) / this.patternHeight;
-        this.upwardsStride =  (this.backgroundObject.floorLevel - (this.boxBottom + this.pipeHeight)) / this.patternHeight;
-        
-        //Create the downwardspattern
-        this.downwardsPattern = document.createElement("canvas");
-        var tCtx = this.downwardsPattern.getContext("2d");
-        var pipeLength = this.boxTop - this.pipeHeight;
-        this.downwardsPattern.height = pipeLength;
-        this.downwardsPattern.width = this.pipeWidth;
-        for(var i = 0; i < this.downwardsStride; i++) {
-            tCtx.drawImage(this.pipePatternSprite, 0, i, this.pipeWidth, 1);
-        }
+        this.downPipeLength = ((this.boxTop - this.pipeHeight) - this.backgroundObject.ceiling_height);
+        this.upPipeLength = (this.backgroundObject.floorLevel - (this.boxBottom + this.pipeHeight));
 
-        //Create the upwards pattern
-        this.upwardsPattern = document.createElement("canvas");
-        tCtx = this.upwardsPattern.getContext("2d");
-        pipeLength = this.backgroundObject.floorLevel - (this.boxBottom + this.pipeHeight);
-        this.upwardsPattern.height = pipeLength;
-        this.upwardsPattern.width = this.pipeWidth;
-        for(var i = 0; i < this.upwardsStride; i++) {
-            tCtx.drawImage(this.pipePatternSprite, 0, i, this.pipeWidth, 1);
-        }
+        this.upPipeY = this.boxBottom + this.pipeHeight;
     }
 
     update(deltaMS) {
@@ -56,12 +39,12 @@ export class Pipe {
     draw(deltaMS) {
         //Draw top pipe
         //Draw top part then repeat until we reach ceiling level
-        this.globals.fatty_context.drawImage(this.downwardsSprite, Math.floor(this.x), Math.floor(this.boxTop - this.pipeHeight), Math.floor(this.pipeWidth), Math.floor(this.pipeHeight));
-        this.globals.fatty_context.drawImage(this.downwardsPattern, Math.floor(this.x) , Math.floor(this.backgroundObject.ceiling_height));
+        this.globals.fatty_context.drawImage(this.downwardsSprite, this.x, this.boxTop - this.pipeHeight, this.pipeWidth, this.pipeHeight);
+        this.globals.fatty_context.drawImage(this.fullPattern, 0, 0, this.fullPattern.width, this.downPipeLength, this.x , this.backgroundObject.ceiling_height, this.fullPattern.width, this.downPipeLength);
 
         //Draw bottom pipe
-        this.globals.fatty_context.drawImage(this.upwardsSprite, Math.floor(this.x), Math.floor(this.boxBottom), Math.floor(this.pipeWidth), Math.floor(this.pipeHeight));
-        this.globals.fatty_context.drawImage(this.upwardsPattern, Math.floor(this.x) , Math.floor(this.boxBottom + this.pipeHeight));
+        this.globals.fatty_context.drawImage(this.upwardsSprite, this.x, this.boxBottom, this.pipeWidth, this.pipeHeight);
+        this.globals.fatty_context.drawImage(this.fullPattern, 0, 0, this.fullPattern.width, this.upPipeLength, this.x , this.upPipeY, this.fullPattern.width, this.upPipeLength);
     }
 
     isPlayerColliding(playerObject) {
