@@ -45,7 +45,7 @@ export class Game extends Component {
         this.globals.assetPath = "";
         this.globals.assetStruct = {};
 
-        this.globals.current_log_level = 2;
+        this.globals.current_log_level = ERROR_LEVEL;
         this.globals.debug = false;
 
         globs = this.globals;
@@ -82,6 +82,7 @@ export class Game extends Component {
             console.error("[FattyBird] You havent assigned a controller property, how are you gonna control this game?");
             return;
         }
+        this.globals.current_log_level = this.props.log_level || this.globals.current_log_level;
         this.globals.assetStruct = this.props.assetStruct;
         this.fatty_bird_setup(this.props.width, this.props.height);
         //Setup callbacks to the parent component
@@ -94,8 +95,6 @@ export class Game extends Component {
     //Needs get called once - If widht and heights are specified use it, otherwise use the containerid dimensions
     fatty_bird_setup(width, height) {
         var containerElement = document.getElementById("fatty_container_div");
-
-        this.globals.current_log_level = VERBOSE_LEVEL;
 
         this.fatty_log(VERBOSE_LEVEL, containerElement);
 
@@ -204,6 +203,7 @@ export class Game extends Component {
     resetGame(startRightAway, cb) {
         this.stopGameLoop(() => {
             this.switchState(new PreState(this, startRightAway));
+            this.started = startRightAway;
             if(cb) {
                 cb();
             }
@@ -214,8 +214,7 @@ export class Game extends Component {
      * Debug functions
      */
     fatty_log(level, msg, ...optionalParams) {
-
-        if(level < this.globals.current_log_level) 
+        if(level < globs.current_log_level) 
             return;
 
         switch(level) {
