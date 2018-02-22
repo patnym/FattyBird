@@ -9,7 +9,8 @@ export class GameOverState{
     }
 
     onStart() {
-        //stopGameLoop();    
+        //stopGameLoop();
+        this.GameObj.gameOver();    
     }
 
     //This is a bit of clever haxxor. This will get called once, enuff to draw the entire screen once more  and lock it
@@ -24,9 +25,7 @@ export class GameOverState{
     }
 
     onKeyDown() {
-        this.GameObj.stopGameLoop(() => {
-            this.GameObj.switchState(new PreState(this.GameObj));
-        });
+        //no-op
     }
 
     onEnd() {

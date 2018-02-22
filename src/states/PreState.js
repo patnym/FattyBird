@@ -8,9 +8,10 @@ import { RunningState } from "./RunningState";
 export class PreState {
 
     //All objects must hold a reference to the game obj to reach globals
-    constructor(GameObj) {
+    constructor(GameObj, startRightAway) {
         this.GameObj = GameObj;
         this.globals = GameObj.globals;
+        this.startRightAway = startRightAway;
     }
 
     onStart() {
@@ -62,9 +63,17 @@ export class PreState {
         //draw
         this.globals.current_background.draw(deltaMS);    
         this.globals.current_player.draw(deltaMS);
+
+        if(this.startRightAway) {
+            this.startGame();
+        }
     }
 
     onKeyDown() {
+        //no-op
+    }
+
+    startGame() {
         this.GameObj.switchState(new RunningState(this.GameObj));
         this.globals.current_state.onKeyDown();
     }

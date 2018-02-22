@@ -46,8 +46,12 @@ export class Game extends Component {
         this.globals.assetStruct = {};
 
         this.globals.current_log_level = 2;
+        this.globals.debug = false;
 
         globs = this.globals;
+
+        this.gameOverCb = null;
+        this.addHighscoreCb = null;
 
         /**
          * requestAnim shim layer by Paul Irish
@@ -74,8 +78,17 @@ export class Game extends Component {
     }
 
     componentDidMount() {
+        if(!this.props.controller) {
+            console.error("[FattyBird] You havent assigned a controller property, how are you gonna control this game?");
+            return;
+        }
         this.globals.assetStruct = this.props.assetStruct;
         this.fatty_bird_setup(this.props.width, this.props.height);
+        //Setup callbacks to the parent component
+        this.props.controller.refStartGame = this.startGame;
+        this.props.controller.refResetGame = this.resetGame;
+        this.addHighscoreCb = this.props.controller.cbAddHighscore;
+        this.gameOverCb = this.props.controller.cbGameOver;
     }
 
     //Needs get called once - If widht and heights are specified use it, otherwise use the containerid dimensions
@@ -135,7 +148,6 @@ export class Game extends Component {
         this.globals.flyThroughHeight = this.globals.fatty_canvas.height * 0.18;
         this.globals.flyThroughPadding = this.globals.fatty_canvas.height * 0.1;
 
-
         //Set the current state
         this.switchState(new PreState(this));
     }
@@ -164,12 +176,38 @@ export class Game extends Component {
 
     addToHighscore() {
         this.globals.score++;
-    
         this.fatty_log(INFO_LEVEL, "Score is: " + this.globals.score);
+        this.addHighscoreCb(this.globals.score);
+    }
+
+    gameOver() {
+        this.gameOverCb(this.globals.score);
     }
 
     resetHighscore() {
         this.globals.score = 0;
+    }
+
+    //Call to start the game - should only get called one per instance
+    startGame() {
+        if(this.started) {
+            console.error("You cannot call start game twice, please use resetGame instead");
+        } else {
+            if(this.globals.current_state.startGame) {
+                this.globals.current_state.startGame();
+                this.started = true;
+            }
+        }
+    }
+
+    //Call to reset the game - if startRightAway is true we start the game right away
+    resetGame(startRightAway, cb) {
+        this.stopGameLoop(() => {
+            this.switchState(new PreState(this, startRightAway));
+            if(cb) {
+                cb();
+            }
+        });
     }
 
     /**
@@ -225,7 +263,9 @@ function gameLoop() {
 
     globs.current_state.onUpdate(deltaMS);
 
-    drawFPS(deltaMS);
+    if(globs.debug) {
+        drawFPS(deltaMS);
+    }
 
     if(globs.rendering) {
         requestAnimFrame( gameLoop );    
